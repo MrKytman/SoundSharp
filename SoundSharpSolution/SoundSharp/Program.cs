@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
+using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 using SoundSharp;
@@ -13,7 +14,9 @@ namespace SoundSharp
         private static string _Name;
         private static int _MenuOption;
         private static int _LoopKill;
+        private static int _PasswordLoop;
         private static int Loopin;
+        private static string Password = null;
         public static ArrayList MPlayerArrayList = new ArrayList();
 
         static void Main(string[] args)
@@ -22,70 +25,90 @@ namespace SoundSharp
             _LoopKill = 1;
             while (_LoopKill == 1)
             {
-            WrongName:
-                Console.Write("Name: ");
-                _Name = Convert.ToString(Console.ReadLine());
-
-                if (_Name == "")
-                { 
-                    Console.WriteLine("Please fill in a name!");
-                    Console.WriteLine("");
-                    goto WrongName;
-                }
-                else
+                try // Rechter muis admin
                 {
-                    LogIn();
-                    Console.ForegroundColor = ConsoleColor.Gray;
+                    WindowsIdentity identity = WindowsIdentity.GetCurrent();
+                    WindowsPrincipal principal = new WindowsPrincipal(identity);
+                    if (principal.IsInRole(WindowsBuiltInRole.Administrator))
+                    {
+                        ShowMenu();
+                    } else
+                    {
+                        WrongName:
+                        Console.Write("Name: ");
+                        _Name = Convert.ToString(Console.ReadLine());
+                        if (args.Length == 2 && args[0] == "admin" && args[1] == Password)
+                        {
+                            ShowMenu();
+                        }
+                        else if (_Name == "")
+                        {
+                            Console.WriteLine("Please fill in a name!");
+                            Console.WriteLine("");
+                            goto WrongName;
+                        }
+                        else
+                        {
+                            LogIn();
+                            Console.ForegroundColor = ConsoleColor.Gray;
+                        }
+                        Console.Clear();
+                        ShowMenu();
+
+                        _LoopKill = 0;
+                    }
                 }
-
-                Console.Clear();
-                ShowMenu();
-
-                _LoopKill = 0;
+                catch (Exception ex)
+                {
+                    if (ex != null) { }
+                }
             }
         }
 
         static void LogIn()
         {
-            string Password;
             int Attempts = -1;
+            _PasswordLoop = 1;
 
 
-        WrongPassword:
-
-            Console.Write("Password: ");
-            Console.ForegroundColor = ConsoleColor.Black;
-            Password = Convert.ToString(Console.ReadLine());
-            Attempts++;
-            if (Password != "")
+            while (_PasswordLoop == 1)
             {
-                switch (Attempts)
+
+                Console.Write("Password: ");
+                Console.ForegroundColor = ConsoleColor.Black;
+                string password = Convert.ToString(Console.ReadLine());
+                Attempts++;
+                if (password != Password)
                 {
-                    case 0:
-                        Console.ForegroundColor = ConsoleColor.Gray;
-                        Console.WriteLine("Wrong Password! 3 Attempts remaining!");
-                        Console.WriteLine();
-                        goto WrongPassword;
-                    case 1:
-                        Console.ForegroundColor = ConsoleColor.Gray;
-                        Console.WriteLine("Wrong Password! 2 Attempts remaining!");
-                        Console.WriteLine();
-                        goto WrongPassword;
-                    case 2:
-                        Console.WriteLine("CAREFUL: Last attempt!");
-                        Console.WriteLine();
-                        goto WrongPassword;
-                    case 3:
-                        Console.ForegroundColor = ConsoleColor.Gray;
-                        Console.Clear();
-                        _LoopKill = 0;
-                        break;
-                    
+                    _PasswordLoop = 0;
+                }
+                else
+                {
+                    switch (Attempts)
+                    {
+                        case 0:
+                            Console.ForegroundColor = ConsoleColor.Gray;
+                            Console.WriteLine("Wrong Password! 3 Attempts remaining!");
+                            Console.WriteLine();
+                            break;
+                        case 1:
+                            Console.ForegroundColor = ConsoleColor.Gray;
+                            Console.WriteLine("Wrong Password! 2 Attempts remaining!");
+                            Console.WriteLine();
+                            break;
+                        case 2:
+                            Console.WriteLine("CAREFUL: Last attempt!");
+                            Console.WriteLine();
+                            break;
+                        case 3:
+                            Console.ForegroundColor = ConsoleColor.Gray;
+                            Console.Clear();
+                            _LoopKill = 0;
+                            _PasswordLoop = 0;
+                            break;
+                    }
                 }
             }
-
-
-
 
         }
 
@@ -101,11 +124,11 @@ namespace SoundSharp
                 Console.WriteLine("|1. Assortment           |");
                 Console.WriteLine("|2. Stock                |");
                 Console.WriteLine("|3. Mutate Stock         |");
-                Console.WriteLine("|4.                      |");
-                Console.WriteLine("|5.                      |");
+                Console.WriteLine("|4. Statistics           |");
+                Console.WriteLine("|5. Add a new MP3 player |");
                 Console.WriteLine("|6.                      |");
                 Console.WriteLine("|7.                      |");
-                Console.WriteLine("|8.                      |");
+                Console.WriteLine("|8. Show Menu            |");
                 Console.WriteLine("|9. Exit                 |");
                 Console.WriteLine("|________________________|");
                 Console.WriteLine();
@@ -126,13 +149,25 @@ namespace SoundSharp
                         Console.Clear();
                         Mutate();
                         break;
+                    case 4:
+                        Console.Clear();
+                        Stats();
+                        break;
+                    case 5:
+                        Console.Clear();
+                        GenerateMP();
+                        break;
+                    case 8:
+                        Console.Clear();
+                        ShowMenu();
+                        break;
                     case 9:
                         Loopin = 0;
                         _LoopKill = 0;
                         break;
                     default:
-                        Console.WriteLine("Thats not a viable option!");
                         Console.Clear();
+                        Console.WriteLine("Thats not a viable option!");
                         break;
                 }        
             }
@@ -152,12 +187,11 @@ namespace SoundSharp
             Console.WriteLine("Assortiment:\n");
             foreach (MPlayer item in MPlayerArrayList)
             {
-                Console.WriteLine(item.Player_id);
-                Console.WriteLine(item.Player_make);
-                Console.WriteLine(item.Player_model);
-                Console.WriteLine(item.Player_MB);
-                Console.WriteLine(item.Player_price);
-                Console.WriteLine();
+                Console.WriteLine("ID: " + item.Player_id);
+                Console.WriteLine("Make: " + item.Player_make);
+                Console.WriteLine("Model: " + item.Player_model);
+                Console.WriteLine("MBSize: " + item.Player_MB);
+                Console.WriteLine("Price: " + item.Player_price);
             }
             Console.ReadKey();
             Console.Clear();
@@ -178,21 +212,75 @@ namespace SoundSharp
         {
             Console.WriteLine("Muteer voorraad:\n");
             Console.WriteLine("Vul het id waarvan u de voorraad wilt veranderen in.");
-            int MutatieID = 0;
+            int MutatieID;
             try
             {
-                MutatieID = -1 + Convert.ToInt32(Console.ReadLine());
-                MPlayer mp3 = MutatieID;
-                mp3.Player_stock = 400;
-                MPlayerArrayList[MutatieID] = mp3;
+
+                MutatieID = Convert.ToInt32(Console.ReadLine());
+                for (int i = 0; i < MPlayerArrayList.Count; i++)
+                {
+                    MPlayer temp = (MPlayer)MPlayerArrayList[i];
+                    if (temp.Player_id == MutatieID)
+                    {
+                        Console.WriteLine("How much MP3 Players were bought(+) or sold(-)?");
+                        int MutatieMod = Convert.ToInt32(Console.ReadLine());
+                        temp.Player_stock = temp.Player_stock + MutatieMod;
+                        MPlayerArrayList[i] = temp;
+                        Console.WriteLine("ID: " + temp.Player_id + ", voorraad: " + temp.Player_stock);
+                        Console.ReadKey();
+                        Console.Clear();
+                    }
+                }
             }
             catch (System.FormatException)
             {
                 Console.WriteLine("U heeft een ongeldige waarde ingevoerd.");
                 return;
             }
-            Console.WriteLine("ID: {0}, voorraad: {0}");
+            
+
         }
 
+        public static void Stats()
+        {
+            MPlayer temp = (MPlayer)MPlayerArrayList[0];
+            MPlayer temp2 = (MPlayer)MPlayerArrayList[1];
+            MPlayer temp3 = (MPlayer)MPlayerArrayList[2];
+            MPlayer temp4 = (MPlayer)MPlayerArrayList[3];
+            MPlayer temp5 = (MPlayer)MPlayerArrayList[4];
+
+            int TotalMp3 = temp.Player_stock + temp2.Player_stock + temp3.Player_stock + temp4.Player_stock + temp5.Player_stock;
+            int PriceMp3 = (temp.Player_stock * Convert.ToInt32(temp.Player_price)) + (temp2.Player_stock * Convert.ToInt32(temp2.Player_price)) + (temp3.Player_stock * Convert.ToInt32(temp3.Player_price)) + (temp4.Player_stock * Convert.ToInt32(temp4.Player_price)) + (temp5.Player_stock * Convert.ToInt32(temp5.Player_price));
+            int AveragePrice = Convert.ToInt32(temp.Player_price + temp2.Player_price + temp3.Player_price + temp4.Player_price + temp5.Player_price) / 5;
+            
+
+            Console.WriteLine("Statistics: ");
+            Console.WriteLine();
+            Console.WriteLine("Total amount of MP3 Players in stock: " + TotalMp3);
+            Console.WriteLine("Total price of all MP3 Players in stock: " + PriceMp3 + " euro's.");
+            Console.WriteLine("Average price of players at SoundSharp: " + AveragePrice + " euro's");
+
+            Console.ReadKey();
+            Console.Clear();
+        }
+
+        public static void GenerateMP()
+        {
+            int IDGen = MPlayerArrayList.Count + 1;
+            Console.WriteLine("What is the production Company?");
+            string MPMake = Convert.ToString(Console.ReadLine());
+            Console.WriteLine("What is the model name?");
+            string MPModel = Convert.ToString(Console.ReadLine());
+            Console.WriteLine("How many are in stock?");
+            int MPStock = Convert.ToInt32(Console.ReadLine());
+            Console.WriteLine("What is the MBSize?");
+            int MPmb = Convert.ToInt32(Console.ReadLine());
+            Console.WriteLine("What is the price?");
+            int MPprice = Convert.ToInt32(Console.ReadLine());
+
+            MPlayerArrayList.Add(new MPlayer(IDGen, MPStock, MPMake, MPModel, MPmb, MPprice));
+
+            Console.Clear();
+        }
     }
 }
